@@ -2,6 +2,8 @@
 #include "board.h"
 #include "rtos_setup.h"
 #include "level_indicator.h"
+#include "user_interface.h"
+#include "fan_motor.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -14,19 +16,34 @@ void startUp(){
   //set led pin to output mode
   gpio_set_direction(LED_BUILTIN, GPIO_MODE_OUTPUT);
 
-  //initialize periferals
+  //initialize peripherals
   indicator_init();
+  display_init();
+  fan_init();
 
 }
 
-void level_indicator(void *parameters){
+void actuators(void *parameters){
   while(1){
-    for(int i = 1; i <= 5; i++){
-      set_level(i);
-      vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
+
+    fan_on();
+    vTaskDelay(1000/portTICK_PERIOD_MS);
+    fan_off();
+    vTaskDelay(1000/portTICK_PERIOD_MS);
+
+    // for(int i = 1; i <= 5; i++){
+    //   set_level(i);
+    //   vTaskDelay(1000 / portTICK_PERIOD_MS);
+    // }
   }
 
+}
+
+void user_interface(void *parameters){
+  while(1){
+    drawTest();
+    vTaskDelay(5000/ portTICK_PERIOD_MS);
+  }
 }
 
 
@@ -55,9 +72,19 @@ void app_main() {
   );
 
   xTaskCreatePinnedToCore(
-    level_indicator,
-    "Level Indicator",
+    actuators,
+    "Actuator Task",
     1024,
+    NULL,
+    1,
+    NULL,
+    app_cpu
+  );
+
+  xTaskCreatePinnedToCore(
+    user_interface,
+    "User Interface",
+    2048,
     NULL,
     1,
     NULL,
