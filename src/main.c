@@ -4,10 +4,12 @@
 #include "level_indicator.h"
 #include "user_interface.h"
 #include "fan_motor.h"
+#include "lamp.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
+
 
 static const BaseType_t app_cpu = 0;
 
@@ -20,21 +22,28 @@ void startUp(){
   indicator_init();
   display_init();
   fan_init();
+  lamp_init();
 
 }
 
 void actuators(void *parameters){
   while(1){
 
-    fan_on();
-    vTaskDelay(1000/portTICK_PERIOD_MS);
-    fan_off();
-    vTaskDelay(1000/portTICK_PERIOD_MS);
-
+    lamp_set_brightness(100);
     // for(int i = 1; i <= 5; i++){
     //   set_level(i);
     //   vTaskDelay(1000 / portTICK_PERIOD_MS);
     // }
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    lamp_set_brightness(50);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    lamp_set_brightness(0);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+
+
+
+
   }
 
 }
@@ -42,7 +51,8 @@ void actuators(void *parameters){
 void user_interface(void *parameters){
   while(1){
     drawTest();
-    vTaskDelay(5000/ portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    
   }
 }
 
@@ -74,7 +84,7 @@ void app_main() {
   xTaskCreatePinnedToCore(
     actuators,
     "Actuator Task",
-    1024,
+    2048,
     NULL,
     1,
     NULL,

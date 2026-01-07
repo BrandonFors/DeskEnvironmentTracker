@@ -23,6 +23,7 @@ static const uint8_t MOTOR_PIN = 8;
 static const uint8_t POT_PIN = 0;
 static const uint8_t PHOTO_PIN = 1;
 static const uint8_t TEMP_PIN = 2;
+static const uint8_t LAMP_PIN = 20;
 
 
 static const uint8_t A0 = 0;
