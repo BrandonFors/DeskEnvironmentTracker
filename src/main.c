@@ -5,6 +5,8 @@
 #include "user_interface.h"
 #include "fan_motor.h"
 #include "lamp.h"
+#include "vent.h"
+
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -22,23 +24,24 @@ void startUp(){
   indicator_init();
   display_init();
   fan_init();
-  lamp_init();
+  // lamp_init();
+  vent_init();
+
 
 }
 
 void actuators(void *parameters){
   while(1){
 
-    lamp_set_brightness(100);
     // for(int i = 1; i <= 5; i++){
     //   set_level(i);
     //   vTaskDelay(1000 / portTICK_PERIOD_MS);
     // }
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-    lamp_set_brightness(50);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-    lamp_set_brightness(0);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+  vent_set_angle(0);     // min position
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
+  vent_set_angle(90);    // center
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
+  vent_set_angle(180);   // max position
 
 
 
