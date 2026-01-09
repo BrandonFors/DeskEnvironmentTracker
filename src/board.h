@@ -9,8 +9,8 @@ static const uint8_t BOOT_PIN = 9;
 static const uint8_t TX = 21;
 static const uint8_t RX = 20;
 
-static const uint8_t BUT_1 = 21;
-static const uint8_t BUT_2 = 18;
+static const uint8_t BUT_1_PIN = 21;
+static const uint8_t BUT_2_PIN = 18;
 
 static const uint8_t SDA = 4;
 static const uint8_t SCL = 5;

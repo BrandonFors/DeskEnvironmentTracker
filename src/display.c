@@ -14,7 +14,11 @@
 #define Y_INC 15
 #define X_START 6
 
+#define TEXT_HEIGHT_HALF 4
 
+#define TRI_HALF_HEIGHT 5
+#define TRI_WIDTH 6
+#define TRI_OFFSET 3
 
 
 // u8g2: https://github.com/olikraus/u8g2/wiki/u8g2setupc
@@ -70,14 +74,26 @@ void homeScreen(){
 
 void displayMenu(MenuItem menu[], int menu_len){
   //max is 3
+  u8g2_ClearBuffer(&u8g2);
+  u8g2_DrawRFrame(&u8g2, 0, 0, 128, 64, 5);
+
   for(int i = 0; i<menu_len; i++){
     if(menu[i].selected == true){
-
+      u8g2_DrawTriangle(&u8g2, 
+                        X_START, 
+                        Y_START+i*Y_INC-TEXT_HEIGHT_HALF-TRI_HALF_HEIGHT, 
+                        X_START, 
+                        Y_START+i*Y_INC-TEXT_HEIGHT_HALF+TRI_HALF_HEIGHT, 
+                        X_START+TRI_WIDTH, 
+                        Y_START+i*Y_INC-TEXT_HEIGHT_HALF); //draw triangle to mark a selected item
+      u8g2_DrawStr(&u8g2, X_START+TRI_WIDTH+TRI_OFFSET, Y_START+i*Y_INC,menu[i].name);
     }else{
       u8g2_DrawStr(&u8g2, X_START, Y_START+i*Y_INC,menu[i].name);
     }
 
   }
+  u8g2_SendBuffer(&u8g2);
+
 
 }
 

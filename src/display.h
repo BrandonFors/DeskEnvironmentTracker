@@ -13,6 +13,8 @@ void display_init();
 
 void homeScreen();
 
+void displayMenu(MenuItem menu[], int menu_len);
+
 
 
 #endif

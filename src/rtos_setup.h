@@ -3,25 +3,28 @@
 
 #include "freertos/FreeRTOS.h"
 
-#define BUTTON_QUEUE_LEN 10
+#define BUTTON_QUEUE_LEN 1
+
+#define DEBOUNCE_TIME_MS 250
 
 
-enum ACTUATOR{
-  FAN,
-  VENT,
-  LAMP
-};
 
-enum COMMAND{
-  MODE,
-  TOGGLE,
-  SAMPLE_POT, // sampling from potentiometer
-  SAMPLE_BUT,
-  STOP_SAMPLE,
-};
+typedef struct {
+
+} Actuator;
+
+
 
 //queue handles
 
 QueueHandle_t buttonQueue;
+
+
+//Task Handles 
+
+TaskHandle_t userInterfaceTask;
+
+
+void gpio_isr_handler(void* arg);
 
 #endif

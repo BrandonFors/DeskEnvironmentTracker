@@ -12,17 +12,45 @@
 
 //inputs
 #include "potentiometer.h"
+#include "buttons.h"
 
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "driver/gpio.h"
+#include "esp_timer.h"
 
+
+#define NUM_ACTUATORS 3 
+#define NUM_ACTIONS 3 //number of actions a user can take given the actuator they have selected
+#define ACTUATOR_MENU_LEN (NUM_ACTUATORS + 1)
+#define ACTION_MENU_LEN   (NUM_ACTIONS + 1)
 
 static const BaseType_t app_cpu = 0;
 
 
 static char* TAG = "RTOS";
+
+static uint64_t last_button_time[2] = {0}; // array to hold dobounce times
+
+//button interrupt function
+void IRAM_ATTR gpio_isr_handler(void* arg){
+  ButtonEvent button_pressed = (ButtonEvent)(uintptr_t)arg;
+  uint64_t now = esp_timer_get_time() / 1000;
+  BaseType_t task_woken = pdFALSE;
+
+  int button_idx = button_pressed - 1;  // Assuming BUTTON_1=1, BUTTON_2=2
+  if(now - last_button_time[button_idx] < DEBOUNCE_TIME_MS) {
+    return;
+  }
+  last_button_time[button_idx] = now;
+
+  xQueueSendFromISR(buttonQueue, &button_pressed, &task_woken);
+  vTaskNotifyGiveFromISR(userInterfaceTask, &task_woken); //notify the ui task
+  if(task_woken) portYIELD_FROM_ISR();
+
+}
 
 //startup function that will be called at the begeing of mcu running
 void start_up(){
@@ -36,11 +64,16 @@ void start_up(){
   lamp_init();
   vent_init();
   potentiometer_init();
+  buttons_init();
 
 
-
+  //set callback functions for button interrupts
+  gpio_isr_handler_add(BUT_1_PIN, gpio_isr_handler, (void *)BUTTON_1);
+  gpio_isr_handler_add(BUT_2_PIN, gpio_isr_handler, (void *)BUTTON_2);
 
 }
+
+
 
 // task that handles all outputs (vent, fan, lamp, and level indicator)
 void actuators(void *parameters){
@@ -78,17 +111,49 @@ void user_interface(void *parameters){
   //actions of mode and toggle can be implemented using a screen displaying the current state that is switchable through buttons
   //on/off, automatic/manual
 
+  MenuItem actuator_menu[ACTUATOR_MENU_LEN] = {
+    {"Fan",false}, 
+    {"Vent", false},
+    {"Lamp", false},
+    {"Exit", false},
+  };
+  
+  MenuItem action_menu[ACTION_MENU_LEN] = {
+    {.name = "Fan", .selected = false}, 
+    {.name = "Vent", .selected = false},
+    {.name = "Lamp", .selected = false},
+    {.name = "Exit", .selected = false},
+  };
+  
+
   //variables needed for UI logic
   bool home = true;
+  int selected_idx = 0;
+  
   //variable to store what button was pressed
-  char pressed = NULL;
+  ButtonEvent pressed;
   homeScreen();
-
+ 
   while(1){
     if(xQueueReceive(buttonQueue, &pressed, portMAX_DELAY) == pdTRUE){
-
-      vTaskDelay(1000 / portTICK_PERIOD_MS);
+      selected_idx = 0;
+      actuator_menu[selected_idx].selected = true;
+      displayMenu(actuator_menu, ACTUATOR_MENU_LEN);
     }
+    pressed = NA;
+    while(pressed != BUTTON_1){ // while the select button is not pressed
+      if(xQueueReceive(buttonQueue, &pressed, portMAX_DELAY) == pdTRUE){
+        if(pressed == BUTTON_2){ // this is the down or move button
+          actuator_menu[selected_idx].selected = false;
+          selected_idx = (selected_idx+1) % ACTUATOR_MENU_LEN;
+          actuator_menu[selected_idx].selected = true;
+          displayMenu(actuator_menu, ACTUATOR_MENU_LEN);
+        }else if(pressed == BUTTON_1){
+
+        }
+      }
+    }
+  
 
     
   }
@@ -110,7 +175,7 @@ void app_main() {
 
   //setup handles for queues 
 
-  buttonQueue = xQueueCreate(BUTTON_QUEUE_LEN, sizeof(char));
+  buttonQueue = xQueueCreate(BUTTON_QUEUE_LEN, sizeof(ButtonEvent));
 
 
   
@@ -142,7 +207,7 @@ void app_main() {
     2048,
     NULL,
     1,
-    NULL,
+    &userInterfaceTask,
     app_cpu
   );
 
